@@ -28,14 +28,14 @@ def main():
         action="version",
         version=f"%(prog)s, version {__version__}",
     )
-    parser.add_argument("amount", type=float)
-    parser.add_argument("currency")
+    parser.add_argument("amount", type=float, nargs='?')
+    parser.add_argument("currency", nargs='?')
 
     parser.add_argument(
         "-t",
         "--to",
         help="target currency, default is %(default)s",
-        default="EUR",
+        default="BRL",
     )
 
     parser.add_argument(
@@ -68,9 +68,16 @@ def main():
         help="change currency file used, default is %(default)s",
         default=CURRENCY_FILE,
     )
+    
+    parser.add_argument(
+        "-u",
+        "--update",
+        help="update database",
+        action="store_true",
+    )
 
     args = parser.parse_args()
-
+    
     c = CurrencyConverter(
         currency_file=args.file,
         fallback_on_wrong_date=True,
@@ -79,6 +86,11 @@ def main():
         verbose=args.verbose > 1,
     )
     currencies = sorted(c.currencies)
+
+    if args.update:
+        print('update')
+        c.update()
+        return
 
     if args.verbose:
         print(f"{len(currencies)} available currencies:")

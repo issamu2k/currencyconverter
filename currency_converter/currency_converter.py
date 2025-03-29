@@ -1,6 +1,6 @@
-#!/usr/bin/env python
+    #!/usr/bin/env python
 
-import os.path as op
+import os, os.path as op
 from functools import wraps
 import datetime
 from datetime import timedelta
@@ -9,6 +9,14 @@ from zipfile import ZipFile
 from io import BytesIO
 from decimal import Decimal
 from urllib.request import urlopen
+try:
+    from urllib2 import urlopen, Request, HTTPCookieProcessor, build_opener
+except:
+    from urllib.request import urlopen, Request, HTTPCookieProcessor, build_opener
+try:
+    from cookielib import CookieJar
+except:
+    from http.cookiejar import CookieJar
 
 _DIRNAME = op.realpath(op.dirname(__file__))
 CURRENCY_FILE = op.join(_DIRNAME, "eurofxref-hist.zip")
@@ -46,7 +54,7 @@ def list_dates_between(first_date, last_date):
     """Returns all dates from first to last included."""
     return [
         first_date + timedelta(days=n) for n in range(1 + (last_date - first_date).days)
-    ]
+    ]   
 
 
 @memoize
@@ -353,6 +361,28 @@ class CurrencyConverter:
         r1 = self._get_rate(new_currency, date)
 
         return self.cast(amount) / r0 * r1
+    
+    def _download_file(self, url, path, filename):
+        """download file
+        """
+        cj = CookieJar()
+        opener = build_opener(HTTPCookieProcessor(cj))
+        try:
+            response = opener.open(url)
+            content = response.read()
+        except:
+            print('Download error')
+            return None
+        fn = os.path.join(path, filename)
+        with open(fn, 'wb') as f:
+            f.write(content)
+        return fn    
+    
+    def update(self):
+        """update data file.
+        """
+        fn = self._download_file(ECB_URL, _DIRNAME, CURRENCY_FILE)
+        print(fn)
 
 
 class S3CurrencyConverter(CurrencyConverter):
